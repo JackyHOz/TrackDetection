@@ -5,7 +5,7 @@ import os
 from PIL import Image, ImageDraw, ExifTags, ImageColor, ImageFont
 
 trail = []
-
+alltrail = []
 def show_custom_labels(model, bucket, photo, min_confidence, filename):
 
     client = boto3.client('rekognition')
@@ -59,23 +59,49 @@ def show_custom_labels(model, bucket, photo, min_confidence, filename):
                 (left, top + height),
                 (left, top))
             # can change the line color code and width
-            draw.line(points, fill='#00d400', width=10)
+            # draw.line(points, fill='#00d400', width=5)
+            
+
             # draw the point in map
-            drawmap.line(points, fill='#FF0000', width=2)
+            # drawmap.line(points, fill='#FF0000', width=2)
+            # find the midpoint in the bounding box
+            midpoint = ((left+width/2,top+height/2),(left+width/2,top+height/2))
+            drawmap.line(midpoint, fill='#00ff55', width=5)
             trail.append((left+width/2,top+height/2))
+
+            alltrail.append((left+width/2,top+height/2))
+            
             if len(trail) > 1:
                 midline = (trail[len(trail)-1],trail[len(trail)-2],trail[len(trail)-1])
                 drawmap.line(midline, fill='#00ff55', width=5)
                 trail[len(trail)-2] = trail[len(trail)-1]
                 trail.pop()
+            # print(trail)
+
+            # for i in alltrail:
+            #     print('test all')
+            #     print(i)
+            #     newpoint = ((i)) + ((i))
+            #     print(newpoint)
+
+
+            # point = (alltrail[len(alltrail)-1],alltrail[len(alltrail)-2],alltrail[len(alltrail)-1])
+            #     # point = (alltrail[len(alltrail)-1])
+                
+            # print(point)
+                
+            draw.line(alltrail, fill='#00d400', width=5)
+                
+            # print(alltrail)
+            
     #image.show()
-    #image.save("{}".format(filename))
+            image.save("{}".format(filename))
     # replace in local to be trail
     map.save("images/image0.jpg")
     return len(response['CustomLabels'])
 
 def main():
-
+    
     s3 = boto3.client("s3")
     #replace bucket name
     bucket = ""
