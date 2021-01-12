@@ -4,6 +4,8 @@ import os
 
 from PIL import Image, ImageDraw, ExifTags, ImageColor, ImageFont
 
+trail = []
+
 def show_custom_labels(model, bucket, photo, min_confidence, filename):
 
     client = boto3.client('rekognition')
@@ -60,6 +62,12 @@ def show_custom_labels(model, bucket, photo, min_confidence, filename):
             draw.line(points, fill='#00d400', width=10)
             # draw the point in map
             drawmap.line(points, fill='#FF0000', width=2)
+            trail.append((left+width/2,top+height/2))
+            if len(trail) > 1:
+                midline = (trail[len(trail)-1],trail[len(trail)-2],trail[len(trail)-1])
+                drawmap.line(midline, fill='#00ff55', width=5)
+                trail[len(trail)-2] = trail[len(trail)-1]
+                trail.pop()
     #image.show()
     #image.save("{}".format(filename))
     # replace in local to be trail
