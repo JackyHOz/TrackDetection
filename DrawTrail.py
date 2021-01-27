@@ -1,11 +1,14 @@
 import boto3
 import io
 import os
+import numpy as np
+from scipy.spatial.distance import pdist
 
 from PIL import Image, ImageDraw, ExifTags, ImageColor, ImageFont
 
 trail = []
 alltrail = []
+eachtrail = {}
 def show_custom_labels(model, bucket, photo, min_confidence, filename):
 
     client = boto3.client('rekognition')
@@ -26,8 +29,8 @@ def show_custom_labels(model, bucket, photo, min_confidence, filename):
 
     imgWidth, imgHeight = image.size
     #Draw in map/picture from local
-    map = Image.open("images/image0.jpg")
-    drawmap = ImageDraw.Draw(map)
+    # map = Image.open("images/image0.jpg")
+    # drawmap = ImageDraw.Draw(map)
 
     draw = ImageDraw.Draw(image)
 
@@ -66,14 +69,48 @@ def show_custom_labels(model, bucket, photo, min_confidence, filename):
             # drawmap.line(points, fill='#FF0000', width=2)
             # find the midpoint in the bounding box
             midpoint = ((left+width/2,top+height/2),(left+width/2,top+height/2))
-            drawmap.line(midpoint, fill='#00ff55', width=5)
+            # drawmap.line(midpoint, fill='#00ff55', width=5)
             trail.append((left+width/2,top+height/2))
 
             alltrail.append((left+width/2,top+height/2))
-            
+            # print(alltrail)
+            # 2coordinates to the array
+            arraydistance=np.vstack([trail[len(trail)-2],trail[len(trail)-1]])
+            # print(arraydistance)
+            # calculate the distance  
+            distance=pdist(arraydistance)
+            # print(distance)
+            # print(float(distance))
+            fill = ''
+            # speed for different color
+            if float(distance) > 100:
+                fill = '#00d400'
+                # draw.line(alltrail, fill='#00d400', width=5)
+                # eachtrail.append('#00d400')
+                # eachtrail.update({(left+width/2,top+height/2): '#00d400'})
+            elif float(distance) > 50:
+                fill = '#FFFF00'
+                # draw.line(alltrail, fill='#FFFF00', width=5)
+                # eachtrail.append('#FFFF00')
+                # eachtrail.update({(left+width/2,top+height/2): '#FFFF00'})
+            else:
+                fill = '#FF0000'
+                # draw.line(alltrail, fill='#FF0000', width=5)
+                # eachtrail.append('#FF0000')
+                # eachtrail.update({(left+width/2,top+height/2): '#FF0000'})
+
             if len(trail) > 1:
                 midline = (trail[len(trail)-1],trail[len(trail)-2],trail[len(trail)-1])
-                drawmap.line(midline, fill='#00ff55', width=5)
+                # drawmap.line(midline, fill='#00ff55', width=5)
+
+                # draw trails with different color
+                if len(eachtrail) > 1:
+                    for x in eachtrail:
+                        draw.line(x, fill=eachtrail[x], width=5)
+                draw.line(midline, fill=fill, width=5)
+                
+                # save the trail to dict
+                eachtrail.update({midline: fill})
                 trail[len(trail)-2] = trail[len(trail)-1]
                 trail.pop()
             # print(trail)
@@ -90,14 +127,14 @@ def show_custom_labels(model, bucket, photo, min_confidence, filename):
                 
             # print(point)
                 
-            draw.line(alltrail, fill='#00d400', width=5)
+            # draw.line(alltrail, fill='#00d400', width=5)
                 
             # print(alltrail)
             
     #image.show()
             image.save("{}".format(filename))
     # replace in local to be trail
-    map.save("images/image0.jpg")
+    # map.save("images/image0.jpg")
     return len(response['CustomLabels'])
 
 def main():
