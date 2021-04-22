@@ -11,7 +11,7 @@ export class CdkStack extends cdk.Stack {
       maxAzs: 2,
       subnetConfiguration: [ 
         { name: 'PUBLIC', subnetType: ec2.SubnetType.PUBLIC},
-        { name: 'ECS', subnetType: ec2.SubnetType.PRIVATE} ,
+        { name: 'ECS', subnetType: ec2.SubnetType.PRIVATE },
       ],
       //add NAT Gateway in VPC 
       natGateways: 1,

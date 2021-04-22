@@ -26,7 +26,7 @@ def labelDetection(frame):
     ret, buf = cv2.imencode('.jpg', frame) 
     response = rekognition.detect_custom_labels(
         # find project arn in console
-        ProjectVersionArn='replace in here',
+        ProjectVersionArn='arn:aws:rekognition:ap-southeast-1:046183741095:project/DeepRacer_Detection/version/DeepRacer_Detection.2021-04-01T23.46.23/1617291982531',
         Image={
             'Bytes': buf.tobytes(),
         },
@@ -44,6 +44,7 @@ url = kvam.get_hls_streaming_session_url(
 s3_client = boto3.client('s3')
 # use cv2 capture frames from kvs
 vcap = cv2.VideoCapture(url)
+vcap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
 
 while(True):
     # Capture frame-by-frame
@@ -97,11 +98,11 @@ while(True):
     # FPS is 20.0，resolution is 640x360
     out = cv2.VideoWriter('output.avi', fourcc, 1.0, (1280, 720))
     out.write(frame)
-    out.release()
+out.release()
     #create hls file from output video
-    video = ffmpeg_streaming.input('output.avi')
-    hls = video.hls(Formats.h264())
-    hls.auto_generate_representations()
+video = ffmpeg_streaming.input('output.avi')
+hls = video.hls(Formats.h264())
+hls.auto_generate_representations()
 
     # dash = video.dash(Formats.h264())
     # dash.auto_generate_representations()
@@ -110,14 +111,14 @@ while(True):
     # try:
     # hls.output('hls.m3u8')
     
-    hls.output('./outimages/hls.m3u8')
+hls.output('./outimages/hls.m3u8')
     # print('test')
     # s3_client = boto3.client('s3')
     # upload hls to s3
-    for dirPath, dirNames, fileNames in os.walk('./outimages'):
+for dirPath, dirNames, fileNames in os.walk('./outimages'):
     # print(fileNames)
-        for picture in fnmatch.filter(fileNames, '*'):
-            s3_client.upload_file('outimages/' + picture, 'YOUR_BUCKET_NAME',
+    for picture in fnmatch.filter(fileNames, '*'):
+        s3_client.upload_file('outimages/' + picture, 'realtimeoutputlabeled',
                         'outimages/' + str(picture))
 
     # except:

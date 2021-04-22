@@ -1,5 +1,6 @@
 import * as cdk from '@aws-cdk/core';
 import * as ec2 from '@aws-cdk/aws-ec2';
+import * as elbv2 from '@aws-cdk/aws-elasticloadbalancingv2';
 import { IVpc } from '@aws-cdk/aws-ec2';
 import * as ecs from "@aws-cdk/aws-ecs";
 import { DockerImageAsset } from '@aws-cdk/aws-ecr-assets';
@@ -12,6 +13,7 @@ import * as iam from '@aws-cdk/aws-iam';
 interface WebStackprops extends cdk.StackProps {
     mainvpc: ec2.IVpc,
     ecssg: ec2.SecurityGroup,
+    lb: elbv2.ApplicationLoadBalancer,
     // dockerrole: iam.IRole
 }
 
@@ -21,7 +23,7 @@ export class EcsStack extends cdk.Stack {
     constructor(scope: cdk.App, id: string, props: WebStackprops) {
       super(scope, id, props);
       // const dockerrole = props.dockerrole;
-
+      const lb = props.lb;
       // create cluster for ecs
       const ecssg = props.ecssg;
       const vpc = props.mainvpc;
@@ -41,8 +43,8 @@ export class EcsStack extends cdk.Stack {
       // config task 
       const taskDefinition = new ecs.FargateTaskDefinition(this, 'TaskDef', 
         { 
-          cpu : 1024,
-          memoryLimitMiB : 2048,
+          cpu : 2048,
+          memoryLimitMiB : 4096,
           taskRole: dockerrole,
           executionRole: dockerrole,
         }
@@ -65,7 +67,9 @@ export class EcsStack extends cdk.Stack {
         }),
         // image: ecs.ContainerImage.fromEcrRepository(ecrRepo, 'v2.0_pipeline'),
         logging: ecs.LogDrivers.awsLogs({ streamPrefix: "ecs-log" }),
-        memoryLimitMiB: 512,
+        // memoryLimitMiB: 512,
+        
+        
       });
 
       // run service in private subnet
@@ -83,5 +87,17 @@ export class EcsStack extends cdk.Stack {
         
       });
 
+      container.addPortMappings({
+        containerPort: 5000,
+        hostPort: 5000,
+        protocol: ecs.Protocol.TCP
+      });
+
+      const listener = lb.addListener("Listener", { port: 80 });
+      const targetGroup = listener.addTargets("ECS", {
+        port: 5000,
+        protocol: elbv2.ApplicationProtocol.HTTP,
+        targets: [this.service],
+      });
     }
 }
