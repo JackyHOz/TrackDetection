@@ -1,30 +1,21 @@
 import * as cdk from '@aws-cdk/core';
 import * as ec2 from '@aws-cdk/aws-ec2';
 import * as elbv2 from '@aws-cdk/aws-elasticloadbalancingv2';
-import { IVpc } from '@aws-cdk/aws-ec2';
 import * as ecs from '@aws-cdk/aws-ecs';
-import { DockerImageAsset } from '@aws-cdk/aws-ecr-assets';
 import { join } from 'path';
-import * as ecr from '@aws-cdk/aws-ecr';
-import * as assets from '@aws-cdk/assets';
-import * as s3_assets from '@aws-cdk/aws-s3-assets';
 import * as iam from '@aws-cdk/aws-iam';
 
 interface WebStackprops extends cdk.StackProps {
 	mainvpc: ec2.IVpc;
 	ecssg: ec2.SecurityGroup;
 	lb: elbv2.ApplicationLoadBalancer;
-	// dockerrole: iam.IRole
 }
 
 export class EcsStack extends cdk.Stack {
-	// public readonly vpc: ec2.IVpc
 	public readonly service: ecs.FargateService;
 	constructor(scope: cdk.App, id: string, props: WebStackprops) {
 		super(scope, id, props);
-		// const dockerrole = props.dockerrole;
 		const lb = props.lb;
-		// create cluster for ecs
 		const ecssg = props.ecssg;
 		const vpc = props.mainvpc;
 
@@ -49,24 +40,13 @@ export class EcsStack extends cdk.Stack {
 			executionRole: dockerrole,
 		});
 
-		// const ecrRepoName = "fyp";
-		// const ecrRepo = ecr.Repository.fromRepositoryAttributes(
-		//   this,
-		//   ecrRepoName,
-		//   {
-		//     repositoryArn: `arn:aws:ecr:ap-southeast-1:012345678901:repository/${ecrRepoName}`,
-		//     repositoryName: ecrRepoName
-		//   }
-		// );
-
 		// ecs images create from local dockerfile
 		const container = taskDefinition.addContainer('ecs', {
 			image: ecs.ContainerImage.fromAsset(join(__dirname, '..', '..', 'web'), {
 				file: 'Dockerfile',
 			}),
-			// image: ecs.ContainerImage.fromEcrRepository(ecrRepo, 'v2.0_pipeline'),
+			// save ecs log
 			logging: ecs.LogDrivers.awsLogs({ streamPrefix: 'ecs-log' }),
-			// memoryLimitMiB: 512,
 		});
 
 		// run service in private subnet
@@ -94,6 +74,7 @@ export class EcsStack extends cdk.Stack {
 		});
 
 		const listener = lb.addListener('Listener', { port: 80 });
+		// add target group to alb
 		const targetGroup = listener.addTargets('ECS', {
 			port: 5000,
 			protocol: elbv2.ApplicationProtocol.HTTP,

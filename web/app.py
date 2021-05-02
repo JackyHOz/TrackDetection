@@ -7,7 +7,7 @@ app = Flask(__name__)
 STREAM_NAME = "testing"
 kvs = boto3.client("kinesisvideo", region_name='ap-southeast-1')
 
-# Grab the endpoint from GetDataEndpoint
+# Get the endpoint from GetDataEndpoint
 endpoint = kvs.get_data_endpoint(
     APIName="GET_HLS_STREAMING_SESSION_URL",
     StreamName=STREAM_NAME
@@ -20,8 +20,7 @@ url = kvam.get_hls_streaming_session_url(
 )['HLSStreamingSessionURL']
 
 camera = cv2.VideoCapture(url)
-# camera.set(cv2.CAP_PROP_BUFFERSIZE, 1)
-# camera.set(cv2.CAP_PROP_FPS, 1)
+
 rekognition = boto3.client('rekognition')
 def labelDetection(frame):
     ret, buf = cv2.imencode('.jpg', frame) 
@@ -35,45 +34,45 @@ def labelDetection(frame):
     )
     return response
 
+# Capture frame each 4 second
 frame_rate = 0.25
 prev = 0
 
-def gen_frames(frame_rate, prev):  # generate frame by frame from camera
+# generate frame by frame from camera
+def gen_frames(frame_rate, prev):  
     count = 0
     while True:
         time_elapsed = time.time() - prev
-        # res, image = cap.read()
-        success, frame = camera.read()  # read the camera frame
+        # read the camera frame
+        success, frame = camera.read()  
         if time_elapsed > 1./frame_rate:
             prev = time.time()
-        # Capture frame-by-frame
         
-        # time.sleep(1)
-            # if not success:
-            #     break
-            # else:
+        
             try:
-                if count % 2 == 0:
-                    resp = labelDetection(frame)
+                if count % 3 == 0:
                     count += 1
+                    resp = labelDetection(frame)
+                    imgHeight, imgWidth, channels = frame.shape
+                        
+                    respones = resp['CustomLabels'][0]['Geometry']['BoundingBox']
+                        
+                    # draw the bounding box through cv2
+                    cv2.rectangle(frame, (int(respones['Left']*imgWidth),int(respones['Top']*imgHeight)),
+                        (int((respones['Left']+respones['Width'])*imgWidth),
+                        int((respones['Top']+respones['Height'])*imgHeight)), (0, 255, 0), 1)
                 else:
                     count +=1
-                imgHeight, imgWidth, channels = frame.shape
-                    # print(imgHeight,imgWidth)
-                respones = resp['CustomLabels'][0]['Geometry']['BoundingBox']
-                    # print(respones)
-                    # draw the bounding box through cv2
-                cv2.rectangle(frame, (int(respones['Left']*imgWidth),int(respones['Top']*imgHeight)),
-                    (int((respones['Left']+respones['Width'])*imgWidth),
-                    int((respones['Top']+respones['Height'])*imgHeight)), (0, 255, 0), 1)
+
             except:
-                    # if model is not working or cannot find object in frame
+                # if model is not working or cannot find object in frame
                 print('no label')
 
             ret, buffer = cv2.imencode('.jpg', frame)
             frame = buffer.tobytes()
+            #show result
             yield (b'--frame\r\n'
-                    b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')  # concat frame one by one and show result
+                        b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')  
 
 @app.route('/video_feed')
 def video_feed():
