@@ -4,8 +4,8 @@ import boto3
 import time
 app = Flask(__name__)
 
-STREAM_NAME = "testing"
-kvs = boto3.client("kinesisvideo", region_name='ap-southeast-1')
+STREAM_NAME = "<your stream name>"
+kvs = boto3.client("kinesisvideo", region_name='your region name')
 
 # Get the endpoint from GetDataEndpoint
 endpoint = kvs.get_data_endpoint(
