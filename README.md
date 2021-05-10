@@ -14,10 +14,11 @@ cd TrackDetection/
 ./startlive.sh  
 
 cd web/  
-**update stream name, region and model arn in app.py**
+**update stream name, region and model arn in app.py**  
 cd ..  
 cd cdk/  
 cdk deploy --all  
 **(may be)press 'y' to continue**  
 
-Finally, use Load balancer's DNS to visit webpage
+Finally, use Load balancer's DNS to visit webpage  
+You also can update resolution in the startlive.sh
