@@ -1,5 +1,7 @@
 # TrackDetection
-
+Prequisite and Remarks:  
+A running model is required. Numbers of attributes needs to be replaced in the files before running, which are described as follows.  
+The unfinished transform.py is also included, which is for transforming the image of the track that is taken at a random angle, into an angle of top view. 
 ## For draw the trail
 git clone https://github.com/JackyHOz/TrackDetection.git  
 cd TrackDetection/  
